@@ -1,5 +1,5 @@
 # Pyrite32-BrushScripts-FireAlpaca
-A collection of all of the brush scripts I've made over the years. A mix of tools and brushes designed to be compatible with mice.
+A collection of all of the brush scripts I've made over the years, for use with the free drawing program FireAlpaca. A mix of tools and brushes designed to be compatible with mice.
 
 + *addget.bs* reads in a color from the canvas and the foreground and calculates the color needed to obtain the target (foreground color) in additive blending mode. Results in RGB(255, 0, 0) if additive blending mode cannot produce the desired color.
 Good for figuring out which color you need to use for highlights, if highlights are on a layer with Add blending mode.
