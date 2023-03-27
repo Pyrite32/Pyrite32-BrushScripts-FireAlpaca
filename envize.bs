@@ -1,0 +1,158 @@
+function param1()
+	return	"Intensity", 0, 100, 50
+end
+
+function main( x, y, p )
+
+	bs_pixel_set( x, y, 255, 0, 0, 255 )
+	if isFirst then
+		firstX = x
+		firstY = y
+		isFirst = false
+	end
+
+	return 1
+end
+
+function rgb_to_hsv(r, g, b)
+  r, g, b = r / 255, g / 255, b / 255  -- Normalize RGB values to range [0, 1]
+  local maxval, minval = math.max(r, g, b), math.min(r, g, b)
+  local h, s, v
+  
+  -- Compute value (brightness)
+  v = maxval
+  
+  -- Compute saturation
+  if maxval == 0 then
+    s = 0
+  else
+    s = (maxval - minval) / maxval
+  end
+  
+  -- Compute hue
+  if maxval == minval then
+    h = 0
+  elseif maxval == r and g >= b then
+    h = 60 * (g - b) / (maxval - minval)
+  elseif maxval == r and g < b then
+    h = 60 * (g - b) / (maxval - minval) + 360
+  elseif maxval == g then
+    h = 60 * (b - r) / (maxval - minval) + 120
+  else -- maxval == b
+    h = 60 * (r - g) / (maxval - minval) + 240
+  end
+  
+  return h, s, v
+end
+
+function hsv_to_rgb(h, s, v)
+  local r, g, b
+  
+  -- Convert hue to RGB values
+  local c = v * s
+  local x = c * (1 - math.abs((h / 60) % 2 - 1))
+  local m = v - c
+  if h < 60 then
+    r, g, b = c, x, 0
+  elseif h < 120 then
+    r, g, b = x, c, 0
+  elseif h < 180 then
+    r, g, b = 0, c, x
+  elseif h < 240 then
+    r, g, b = 0, x, c
+  elseif h < 300 then
+    r, g, b = x, 0, c
+  else
+    r, g, b = c, 0, x
+  end
+  
+  -- Add value offset
+  r, g, b = r + m, g + m, b + m
+  
+  -- Convert RGB values to 8-bit integers
+  r, g, b = math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5)
+  
+  return r, g, b
+end
+
+function transformPixel( x , y)
+	local r, g, b, a = bs_pixel_get( x, y )
+	if a == 0 then return end
+	if r == cR and g == cG and b == cT and not isFirst then
+		bs_pixel_set(x,y, cRt, cGt, cBt, 255)
+		return
+	end
+	isFirst = false
+	cR = r
+	cG = g
+	cB = b
+	
+	local h, s, v = rgb_to_hsv(r,g,b)
+
+	s = s * SIZE
+	local theta = h / 180 * math.pi
+	-- cartesian movement
+	-- convert hs to cartesian coordinates.
+	-- r * tan (theta) = y / x.
+	x_coord = (s * math.cos( theta )) + MOVX
+	y_coord = (s * math.sin( theta )) + MOVY
+
+	h =( math.atan2( y_coord, x_coord ) * 180) / math.pi 
+	h = h % 360 
+
+	s = bs_distance( x_coord, y_coord )
+	s = math.min ( math.max ( s, 0 ) , 1 )
+
+	v = math.max(v, MIN_VALUE)
+
+	rf, gf, bf = hsv_to_rgb(h,s,v)
+	bs_pixel_set(x,y, rf, gf, bf, 255)
+
+	cRt = rf
+	cGt = gf
+	cBt = bf
+	
+end
+
+function last(x, y, p)
+
+	bs_reset()
+	local lastX = x
+	local lastY = y
+
+	isFirst = true
+
+	bs_debug_log(firstX)
+	bs_debug_log(lastX)
+
+	for X = firstX, lastX do
+		for Y = firstY, lastY do
+			transformPixel(X,Y)
+		end
+	end
+
+end
+
+firstX = 0
+firstY = 0
+isFirst = true
+
+SIZE = (bs_param1() / 50)
+
+
+local re, ge, be = bs_fore()
+local he, se, ve = rgb_to_hsv(re, ge, be)
+
+local theta_e = he / 180 * math.pi
+MOVX = se * math.cos( theta_e )
+MOVY = se * math.sin( theta_e )
+
+MIN_VALUE = ve * 0.20
+
+cR = 0
+cG = 0
+cB = 0
+
+cRt = 0
+cGt = 0
+cBt = 0

@@ -1,0 +1,62 @@
+function param1()
+return "Size Stretch", 0, 50, 25
+end
+
+function param2()
+return "Minimum Size", 0, 90, 60 
+end
+
+function main( x, y, p )
+	--GENERIC FUNCTIONALITY
+	local w = bs_width()
+	local a = bs_opacity() * 255
+	local delta = 0
+	if first then
+		first = false
+		_x = x --initial pos.
+		_y = y 
+	else
+		delta = bs_distance(_x - x, _y - y)
+		if delta < 1 then
+			return 0
+		end 
+	end
+	
+	_x = x
+	_y = y
+	override = delta - 1
+	counter = counter + 1
+	--GENERIC FUNCTIONALITY
+	local W = instructionRoutine(counter)
+	if counter > instruction[1] then
+		counter = 0
+		oldpercent = W
+		instruction[2] = math.random(bs_param2(),100) / 100
+		instruction[1] = math.random(20 + bs_param1() * 5,100 + bs_param1() * 15)
+	end
+	local r,g,b = bs_fore()
+	--ONLY if distance has been succeeded.
+	bs_ellipse( x, y, w*W,w*W, 0, r,g,b, a )
+	return 1
+end
+
+function instructionRoutine(counter) --counter for time, index for subroutine.
+-- based on the time, return percentage that represents
+--interpolation of old and subroutine time.
+	local progress = counter / instruction[1]
+	local result = progress * ( instruction[2] - oldpercent) + oldpercent
+	return result
+
+	
+end
+
+_x = 0 --used for initial update
+_y = 0 --used for initial update
+first = true
+math.randomseed(bs_ms())
+-- [time] [size%] [time] [size%]
+instruction = {math.random(15 + bs_param1() * 5,40 + bs_param1() * 7 ), 1}
+counter = 0
+oldpercent = bs_param2() / 100
+
+bs_setmode( 1 )

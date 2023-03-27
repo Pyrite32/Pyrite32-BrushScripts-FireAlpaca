@@ -1,0 +1,25 @@
+function main( x, y, p )
+
+  if firstDraw then return 0 end
+  local rl, gl, bl = bs_fore() --The lighter color
+  local rd, gd, bd, a = bs_pixel_get(x,y) --The darker color.
+  local r, g, b = 0
+  local w = bs_width_max()
+
+  r = (rd / rl)* 255
+  g = (gd / gl) * 255
+  b = (bd / bl) * 255
+  
+  if r > 255 or g > 255 or b > 255 then
+  r = 255
+  g = 0
+  b = 0
+  end
+
+  firstDraw = true
+  bs_ellipse( x, y, w, w, 0, r,g,b, 255 )
+  return 1
+end
+
+firstDraw = false
+bs_setmode(0)

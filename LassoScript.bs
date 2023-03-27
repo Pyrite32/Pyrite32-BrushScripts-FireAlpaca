@@ -1,0 +1,63 @@
+function main( x, y, p )
+
+  if firstDraw then
+    firstDrawX = x
+    firstDrawY = y
+  end
+
+  local w = bs_width()
+  if w < 0.5 then
+    w = 0.5
+  end
+  if w > 10 then
+    w = 10
+  end
+
+  local updateDist = w / 4
+  if w > 20 then
+    updateDist = w/10
+  end
+  if w > 100 then
+    updateDist = w/14
+  end
+
+  if not firstDraw then
+    local distance = bs_distance( lastDrawX - x, lastDrawY - y )
+    if distance < updateDist then
+      return 0
+    end
+  end
+
+  table.insert( pts, { x = x, y = y } );
+
+  local r,g,b = bs_fore()
+  local a = bs_opacity() * 255
+
+  bs_ellipse( x, y, w, w, 0, r, g, b, a )
+
+  lastDrawX = x
+  lastDrawY = y
+  firstDraw = false
+
+  return 1
+
+end
+
+function last( x, y, p )
+
+  for i, v in ipairs( pts ) do
+    bs_polygon( v.x, v.y )
+  end
+
+  local r,g,b = bs_fore()
+  local a = bs_opacity() * 255
+
+  --bs_reset()
+  bs_fill( r, g, b, a )
+end
+
+pts = {}
+
+lastDrawX = 0
+lastDrawY = 0
+firstDraw = true

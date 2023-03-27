@@ -1,0 +1,27 @@
+function default_size()
+  return 12, 0.1
+end
+
+function param1()
+  return "R", 0, 100, 20
+end
+
+function param2()
+  return "G",  0, 100, 20
+end
+
+function param3()
+  return "B", 0, 100, 20
+end
+
+
+
+function main( x, y, p )
+bs_ellipse( x, y, bs_width(),bs_width(), 0, bs_param1() * 2.5, bs_param2() * 2.5, bs_param3() * 2.5, 255 )
+  return 0
+end
+
+bs_setmode( 0 )
+
+
+

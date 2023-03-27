@@ -1,0 +1,36 @@
+function param1()
+return "Steps", 3 , 50, 5
+end
+
+function main( x, y, p )
+
+  if firstDraw then return 0 end
+  local rfore, gfore, bfore, a = bs_pixel_get(x,y) --The color you have
+  local rtarget, gtarget, btarget = (255 - rfore), (255- gfore), (255-bfore)--The color you want
+  local r, g, b = 0 -- result
+  local w = bs_width_max()
+  local steps = bs_param1()
+  
+  for i = 0,steps-1, 1 do
+    local percentage = i / steps
+    local spacing = w * math.cos(percentage * 2 * math.pi) 
+    local height =  w * math.sin(percentage * 2 * math.pi) 
+    r, g, b, a = interpolate(rfore, gfore, bfore, rtarget, gtarget, btarget,percentage)
+    bs_ellipse( x + spacing, y + height, w, w, 0, r,g,b, 255 )
+  end
+
+    bs_ellipse( x, y, w, w, 0, rtarget,gtarget,btarget, 255 )
+
+  firstDraw = true
+  return 1
+end
+
+firstDraw = false
+bs_setmode(0)
+
+function interpolate(r1, g1, b1,  r2, g2, b2, percent)
+local R = percent * (r2 - r1) + r1
+local G = percent * (g2 - g1) + g1
+local B = percent * (b2 - b1) + b1
+return R, G, B
+end

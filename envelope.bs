@@ -1,0 +1,20 @@
+function main( x, y, p )
+
+  table.insert( pts, { x = x, y = y } );
+	bs_pixel_set(x,y, 0, 255, 0, 255)
+  return 1
+
+end
+
+function last( x, y, p )
+
+  bs_reset()
+  for i, v in ipairs( pts ) do
+    bs_polygon( v.x, v.y )
+  end
+
+  local r,g,b = bs_fore()
+  bs_fill( r, g, b, 255 )
+end
+
+pts = {}

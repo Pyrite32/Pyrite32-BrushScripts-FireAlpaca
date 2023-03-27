@@ -1,0 +1,89 @@
+function default_name()
+  return "Pixel Brush"
+end
+
+function param1()
+  return "Big Pixels", 0, 1, 1
+end
+
+function param2()
+  return "Dynamic Size", 0, 1, 0
+end
+
+function main( x, y, p )
+
+  local brush_size = getBrushSize()
+  local brush_size_half = brush_size / 2
+
+  local pixel_width = math.floor( bs_canvas_width() / brush_size )
+  local pixel_height = math.floor( bs_canvas_height() / brush_size )
+  local pixel_x = math.floor( x )
+  local pixel_y = math.floor( y )
+
+  local dx, dy = getDxDy(x, y, brush_size)
+
+  draw(dx, dy, brush_size )
+  if bs_param2() == 1 then
+    table.insert( pts, { x = x, y = y } );
+  end
+  return 1
+end
+
+function getDxDy(x, y, brushSize)
+  if bs_param1() == 1 then
+    return math.floor( x / brushSize) * brushSize,  math.floor( y / brushSize) * brushSize
+  else
+    return math.floor( x ) - (brushSize / 2), math.floor( y ) - (brushSize / 2)
+  end
+end
+
+function draw( dx, dy , s )
+  local r,g,b = bs_fore()
+  local a = 255 * bs_opaque()
+  bs_polygon(dx, dy)
+  bs_polygon(dx+s,dy)
+  bs_polygon(dx+s, dy+s)
+  bs_polygon(dx, dy+s)
+  bs_fill(r, g, b, a)
+end
+
+function getBrushSize()
+  return math.max( bs_width_max(), 1)
+end
+
+
+function last( x, y, p )
+  if bs_param2() == 1 then
+    bs_reset()
+
+    local strokeSize = #pts
+    local minimum = (10 / 100) * bs_width_max()
+    local currentW = 0
+    for index, point in ipairs( pts ) do
+       --ignore below:
+	  local strokeCompletion = index / strokeSize
+	  currentW = width_eq(strokeCompletion) * bs_width_max()
+	  currentW = math.max(currentW, minimum)
+        currentW = math.floor(currentW)
+         local dx, dy = getDxDy(point.x, point.y, currentW)
+	  if currentW < 1 then currentW = 0 end
+          draw(math.floor(dx), math.floor(dy), currentW)
+      --ignore above.
+    end
+  end
+end
+
+
+
+function width_eq(x)
+local pow = 0.5
+return math.sin(x*math.pi)^pow
+end
+
+
+pts = {}
+math.randomseed(bs_ms()*100000000000)
+
+
+
+bs_setmode( 0 )

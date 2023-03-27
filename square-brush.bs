@@ -1,0 +1,68 @@
+function param1()
+return "Minimum width", 0, 50, 15
+end
+
+function param2()
+return "sharpness", 0, 20, 10
+end
+
+function width_eq(x)
+ local power = bs_param2() / 10 
+return math.pow(math.sin(x*math.pi),power)
+end
+
+function tablelength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
+
+function draw_box(x,y,wy,wyf,angle)
+  wx, wy = wy / 4, wy / 2
+  bs_polygon(-wx,-wy)
+  bs_polygon(-wx,wy)
+  bs_polygon(wx,wyf)
+  bs_polygon(wx,-wyf)
+  bs_polygon_rotate(angle)
+  bs_polygon_move(x,y)
+  bs_fill(0,0,0,255)
+end
+
+function main( x, y, p )
+
+  local w = bs_width_max()
+
+  local dx, dy = bs_dir()
+  local angle = bs_atan(dx,dy)
+  table.insert( pts, { x = x, y = y , angle=angle} );
+
+  local a = bs_opacity() * 255
+
+  bs_ellipse( x, y, w, w, 0, 0, 0, 0, a )
+  return 1
+
+end
+
+function last( x, y, p )
+
+  bs_reset()
+
+  local size = tablelength(pts)
+  local r,g,b = bs_fore()
+  local a = bs_opacity() * 255
+  local minimum = (bs_param1() / 50) * bs_width_max()
+  for i, v in ipairs( pts ) do
+     local weight = width_eq( i / size)
+     local weight1 = width_eq( (i+1) / size)
+     local w , w1 = weight * bs_width_max(), weight1 * bs_width_max()
+     w, w1 = math.max(w, minimum), math.max(w1, minimum)
+    draw_box(v.x,v.y,w/2,w1/2,v.angle)
+  end
+
+end
+
+
+
+bs_setmode(1)
+
+pts = {}

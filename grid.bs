@@ -1,0 +1,76 @@
+function param1()
+	return "Divisions", 1, 20, 10
+end
+
+function param2()
+	return "Horizontal Only", 0, 1, 0
+end
+
+function param3()
+	return "Vertical Only", 0, 1, 0
+end
+
+function default_size()
+	return 2, 2, 2
+end
+
+function main( x, y, p )
+
+	if first_time then
+		first_time = false
+		x_first = x
+		y_first = y
+	end
+		
+	local red = math.random() * 255
+	local green = math.random() * 255
+	local blue = math.random() * 255
+  
+	local w = bs_width_max()
+	bs_pixel_set( x, y, red, green, blue, 255 )
+	return 1
+end
+
+function last( x, y, p )
+	bs_reset()
+	x_range = x - x_first
+	y_range = y - y_first
+	cell_size = 1 / bs_param1() 
+	x_sep = x_range * cell_size
+	y_sep = y_range * cell_size
+	
+	local w = bs_width_max()
+	if bs_param2() == 0 then
+	  for i = x_first, x, x_sep do
+	  	  stride(i, y_first, i , y, w)
+	  end
+		stride(x, y_first, x , y, w)
+       end
+	
+	if bs_param3() == 0 then
+	  for j = y_first, y, y_sep do
+		  stride(x_first, j, x, j, w)
+	  end
+		  stride(x_first, y, x, y, w)
+	 end
+end
+
+function stride(x, y, x_end, y_end, w)
+	local r, g, b = bs_fore()
+	while y < y_end do
+		bs_ellipse(x, y, w, w, 0, r, g, b, 255 )
+		y = y + 1
+	end
+
+	while x < x_end do
+		bs_ellipse(x, y, w, w, 0, r, g, b, 255 )
+		x = x + 1
+	end
+		
+end
+
+x_first = 0
+y_first = 0
+first_time = true
+
+bs_setmode(1)

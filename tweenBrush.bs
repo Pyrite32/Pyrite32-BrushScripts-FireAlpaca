@@ -1,0 +1,74 @@
+-- TWEEN BRUSH 13-Oct-21
+math.randomseed(bs_ms())
+
+TWEEN_MAX = 20 -- Fine tuning max
+TWEEN_INTERVAL = {-1, 6}
+LENGTH_MIN = 100
+LENGTH_MAX = 30 -- Fine tuning max
+LENGTH_MULTIPLIER = 1750 -( math.random() *300)  -- Adjust width magnitude
+TWEEN_RANDOMNESS = math.random() * 0.2
+
+function param1()
+return "Tween Amount", 0, TWEEN_MAX, TWEEN_MAX / 2
+end
+
+function param2()
+return "Length", 0, LENGTH_MAX, LENGTH_MAX / 2
+end 
+
+function param3()
+return "Ease in/Ease Out Mode", 0, 1, 0
+end 
+
+function param4()
+return "Minimum Width %", 10, 50, 25
+end
+
+function get_width()
+ mainCount = mainCount + 1 --Increment the number of times main called
+  local w = bs_width() --Not using pen pressure.
+
+ 
+  local tween = TWEEN_RANDOMNESS + bs_param1() / (TWEEN_MAX) --Normalize Tween (0-1)
+  tween = TWEEN_INTERVAL[1] + tween * TWEEN_INTERVAL[2] --Put tween on an interval between -1 and 6
+  local length = LENGTH_MIN + (bs_param2() / LENGTH_MAX) * LENGTH_MULTIPLIER --Length must be at minimum 100.
+
+  local exponent = 0.25 * math.pow(2,tween) -- Starts at base number 0.25
+  local pathX = mainCount / length 
+  local pathY = 0
+  if not reverse then
+    pathY = math.pow(pathX, 1/exponent) --Normal.
+  else
+    if bs_param3() == 1 then
+      pathY = 1 - math.pow(pathX, exponent) -- Flipped on X axis, Y axis.
+    else
+      pathY = 1 - math.pow(pathX, 1/exponent) -- Flipped on X axis.
+    end
+  end
+
+  pathY = math.min(1,pathY) -- Ink size can't be greater than 1.
+  if pathX > 1 then
+    reverse = not reverse
+    mainCount = 0 --reset tween
+  end
+  local minWidth = w * bs_param4() / 100
+  return math.max(w * pathY,minWidth)  --Gets us our transformed width.
+
+end
+
+function draw(x, y, p, w)
+  local r, g, b = bs_fore()
+  bs_ellipse( x, y, w, w, 0, r, g, b, 255 )
+end
+
+function main( x, y, p )
+    local w = get_width()
+    draw(x, y, p, w)
+    return 1
+end
+
+
+
+mainCount = 0
+reverse = false
+bs_setmode( 1 )

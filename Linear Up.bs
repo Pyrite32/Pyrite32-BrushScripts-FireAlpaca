@@ -1,0 +1,46 @@
+function param1()
+	return "Starting Width", 0, 20, 5
+end
+
+function param2()
+	return "Increase Time", 0, 20, 15
+end
+
+function main( x, y, p )
+
+	if firstTime then
+		currentSize = bs_width_max()
+		constantSize = currentSize
+		firstTime = false
+	end
+	if currentSize ~= bs_width_max() then
+		downBool = not downBool
+		currentSize = bs_width_max()
+	end
+
+	local base = constantSize  * (bs_param1() / 20)
+	local w = base + increase
+	if w > constantSize then w = constantSize end
+	local a = bs_opacity() * 255
+	bs_ellipse( x, y, w,w, 0, r,g,b, a )
+
+	counter = counter + 1
+	if counter >= bs_param2() then
+		counter = 0
+		result = 0.05
+		if downBool then
+			increase = increase - result
+		else
+			increase = increase + result
+		end
+	end
+	
+	return 1
+end
+counter = 0
+downBool = false
+currentSize = 0
+constantSize = 0
+firstTime = true
+increase = 0
+bs_setmode( 1 )

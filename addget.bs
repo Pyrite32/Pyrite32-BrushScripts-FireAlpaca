@@ -1,0 +1,23 @@
+function main( x, y, p )
+
+  if firstDraw then return 0 end
+  local rfore, gfore, bfore = bs_fore() --The color you want
+  local rtarget, gtarget, btarget, alpha = bs_pixel_get(x,y) --The current color.
+  local r, g, b = 0
+  local w = bs_width_max()
+
+  r = - rfore + rtarget
+  g = - gfore + gtarget
+  b = - bfore + btarget
+  
+  if r < 0 or g < 0 or b < 0 then
+  r, g, b = 255, 0, 0
+  end
+
+  firstDraw = true
+  bs_ellipse( x, y, w, w, 0, r,g,b, 255 )
+  return 1
+end
+
+firstDraw = false
+bs_setmode(0)

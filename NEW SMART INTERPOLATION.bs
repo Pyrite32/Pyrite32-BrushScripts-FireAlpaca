@@ -1,0 +1,288 @@
+function param1()
+return "Hue Shift Opposite", 0,1,0
+end
+
+function param2()
+return "H-Curve", 1,5, 1
+end 
+
+function param3()
+return "SV Curve Pair", 1, 6,1
+end
+
+function param4()
+return "S-Divergence", 0, 20, 10
+end 
+
+function param5()
+return "V-Divergence", 0, 20, 10
+end 
+
+function param6()
+return "Bounce Clamp", 0, 1, 1
+end
+
+function param7()
+return "Debug Mode", 0, 1, 0
+end
+
+function main( x, y, p )
+
+if firstcall then
+  firstcall = false
+  rd, gd, bd, a = bs_pixel_get(x,y) -- Smart color interpolation
+end
+
+return 0
+end
+
+function draw_borders(w,W,x,y)
+
+bs_polygon(x,y)
+bs_polygon(W+x,y)
+bs_polygon(W+x,W+y)
+bs_polygon(x,W+y)
+bs_fill(255,255,255,255)
+
+bs_polygon(x,y)
+bs_polygon(x,w+y)
+bs_polygon(W+x,w+y)
+bs_polygon(W+x,y)
+bs_fill(0,0,0,255)
+
+bs_polygon(x,y)
+bs_polygon(w+x,y)
+bs_polygon(w+x,W+y)
+bs_polygon(x,W+y)
+bs_fill(0,0,0,255)
+
+bs_polygon(W+x,y)
+bs_polygon(W+w+x,y)
+bs_polygon(W+w+x,W+y)
+bs_polygon(W+x,W+y)
+bs_fill(0,0,0,255)
+
+bs_polygon(x,W+y)
+bs_polygon(x, W+w+y)
+bs_polygon(W+w+x,W+w+y)
+bs_polygon(W+w+x,W+y)
+bs_fill(0,0,0,255)
+
+end
+
+function get_hsv(r,g,b)
+  local rp,gp,bp =  r/255, g/255, b/255
+  local brightest = math.max(math.max(rp,gp),bp)
+  local darkest = math.min(math.min(rp,gp),bp)
+  local delta = brightest - darkest
+
+  if delta == 0 then h = 0
+  elseif brightest == rp then
+    h = (60 * ((gp - bp) / delta) + 360) % 360
+  elseif brightest == gp then
+     h = (60 * ((bp - rp) / delta) + 120) % 360
+  elseif brightest == bp then
+     h = (60 * ((rp - gp) / delta) + 240) % 360
+   end
+
+   if brightest == 0 then s = 0
+   else s = (delta / brightest) end
+
+   local v = brightest
+
+  return h, s, v
+
+end
+
+function get_rgb(h,s,v)
+
+  local C = v * s
+  local X = C * (1 - math.abs( h / 60 %2  -1) )
+  local M = v - C
+
+  local R = 0
+  local G = 0
+  local B = 0
+
+  if h >= 0 and h < 60 then 
+    R = C
+   G = X
+  end
+  if h >= 60 and h < 120 then
+    R = X
+   G = C
+  end
+  if h >= 120 and h < 180 then
+    G = C
+    B = X
+  end
+  if h >= 180 and h < 240 then
+    G = X
+    B = C
+  end
+  if h >= 240 and h < 300 then
+    R = X
+    B = C
+  end
+  if h >= 300 and h < 360 then
+  R = C
+  B = X
+  end
+
+  R = (R+M)*255
+  G = (G+M)*255
+  B = (B+M)*255
+  return R,G,B
+
+end
+
+
+function bezier1(p0x,p1x, p2x,p3x, t)
+
+    local q0x = lerp(p0x,p1x,t)
+    local q1x = lerp(p1x,p2x,t)
+    local q2x = lerp(p2x,p3x,t)
+
+    local r0x = lerp(q0x, q1x,t)
+    local r1x = lerp(q1x, q2x, t)
+
+    local sx = lerp(r0x, r1x, t)
+    return sx
+end
+
+function bezier_ease(p1x, p1y, p2x, p2y, t)
+return bezier1(0,p1x, p2x,1,t), bezier1(0,p1y, p2y,1, t)
+end
+
+function bezier4(p0x,p0y,p1x, p1y, p2x, p2y,p3x,p3y, t)
+return bezier1(p0x, p1x, p2x,p3x, t), bezier1(p0y, p1y, p2y,p3y, t)
+end
+
+function lerp(x,y, t)
+local result = (t * (y - x) + x)
+return result
+end 
+
+function hue_easings(t)
+local func = bs_param2()
+if func == 1 then return t end
+if func == 2 then return bezier_ease(1,0,1,1,t) end
+if func == 3 then return bezier_ease(0,0,0,1,t) end
+if func == 4 then return bezier_ease(0,1,1,0,bezier_ease(0,1,1,0,bezier_ease(0,1,1,0,t)))end
+if func == 5 then return bezier_ease(1,0,0,1,t) end
+end
+
+function choose_bezier(func)
+if func == 1 then return 0,0,1,1 end -- linear
+if func == 2 then return 0.75, 0, 1, 0.75 end -- Ease In 
+if func == 3 then return 0, 0, 0, 1 end -- Ease Out 
+if func == 4 then return 0, 1, 1, 0 end --IO on its side
+if func == 5 then return 1, 0, 0, 1 end -- IO
+if func == 6 then return 0, 2, 1, -1 end -- Cosoid
+end
+
+
+function sv_easings(t,s0,sd,v0,vd)
+ 
+  local ax, ay, bx, by = choose_bezier(bs_param3())
+ 
+  local axL, ayL, bxL, byL = lerp(s0,sd,ax), lerp(v0,vd,ay), lerp(s0,sd,bx), lerp(v0,vd,by)
+  local sStrength, vStrength = 1 + (3 * math.abs(s_divergence)), 1 + (3 * math.abs(v_divergence))
+  
+  local delta1S, delta1V = (axL* s_divergence * sStrength), (ayL * v_divergence* vStrength)
+  local delta2S, delta2V = (bxL* s_divergence* sStrength), (byL * v_divergence* vStrength)
+  local curvex, curvey = bezier4(s0,v0, axL + delta1S, ayL + delta1V, bxL + delta2S, byL + delta2V, sd, vd, t)
+ return curvex, curvey
+end
+
+function interpolate(x,y,t)
+return t * (y - x) + x
+end
+
+function draw_slice(x, y, theta,inner_radius,radius,delta,r,g,b)
+  local half_delta = delta / 1.88
+  bs_polygon(x+inner_radius * math.cos(theta + half_delta), y+inner_radius * math.sin(theta + half_delta))
+  bs_polygon(x+inner_radius * math.cos(theta - half_delta), y+inner_radius * math.sin(theta - half_delta))
+  bs_polygon(x+radius * math.cos(theta - half_delta), y+radius * math.sin(theta - half_delta))
+  bs_polygon(x+radius * math.cos(theta + half_delta), y+radius * math.sin(theta + half_delta))
+  bs_fill(r,g,b,255)
+end
+
+function draw_tri(x,y,radius,r,g,b)
+  
+  local del = 2 * math.pi / 3
+  local p2 = -math.pi / 2
+  bs_polygon(x + radius * math.cos(del+p2), y + radius * math.sin(del+p2))
+  bs_polygon(x + radius * math.cos(del*2+p2), y + radius * math.sin(del*2+p2))
+  bs_polygon(x + radius * math.cos(del*3+p2), y + radius * math.sin(del*3+p2))
+  bs_fill(r,g,b,255)
+end
+
+function bounce_clamp(val)
+if val < 0 then val = math.abs(val) end
+if val > 1 then val = (1 - val) + 1 end
+return val
+end
+
+function clamp(min, max, val)
+return math.max(min, math.min(max, val ) )
+end
+
+function last( x, y, p )
+  local w = bs_width_max()
+  local r0,g0,b0 = bs_fore()
+  
+  local h0,s0,v0 = get_hsv(r0,g0, b0)
+  local hd, sd, vd = get_hsv(rd,gd,bd)
+--bs_debug_log("hue now: " .. h0)
+--bs_debug_log("hue dest: " .. hd)
+  draw_tri(x,y,w,r0,g0,b0)
+
+    if DEBUG then
+      bs_debug_log("HELLO!")
+      graph_scale = w * 10
+      draw_borders(2,graph_scale,x+20,y+20)
+    end
+
+  for i = 0.05, 1.05, 0.05 do
+    local theta = i * 2 * math.pi
+    local delta = 0.05 * 2 * math.pi
+    local h = 0
+    local anti_hd = hd - 360
+	
+
+
+    if  h0 - anti_hd  < 180 ~= (bs_param1() == 1) then
+       h = interpolate(h0,anti_hd,hue_easings(i))
+    else
+       h = interpolate(h0,hd, hue_easings(i))
+    end
+     if h < 0 then h = 360 + h end
+    local s, v = sv_easings(i, s0, sd, v0, vd)
+    if bs_param6() == 1 then
+      s, v = bounce_clamp(s), bounce_clamp(v)
+	else
+      s, v = clamp(0,1,s), clamp(0,1,v)
+	end
+    local j,k,l = get_rgb(h,s,v)
+    draw_slice(x,y, theta, w, 2*w, delta,j,k,l)
+    
+    if DEBUG then
+      bs_ellipse(-graph_scale + x-h,y-30,4,4,0,j,k,l,255)
+      bs_ellipse(s*graph_scale+x+20,(1-v)*graph_scale+y+20,5,5,0,j,k,l,255)
+    end
+
+  end
+  
+
+  
+  
+end
+
+s_divergence = (bs_param4()-10) / 10
+v_divergence = (bs_param5()-10) /10
+DEBUG = bs_param7() == 1
+firstcall = true
+graph_scale = 0
+rd, gd, bd, a = 0, 0, 0, 0
+bs_setmode(0)

@@ -1,0 +1,166 @@
+function param1()
+return "Boomerang Saturation", 0,1,1
+end
+
+function param2()
+return "H-Curve (low = instant)", 0, 10, 5
+end 
+
+function param3()
+return "S-Curve (mid = linear ) ", 0, 10,5
+end
+
+function param4()
+return "V-Curve (high = at end)", 0, 10, 5
+end 
+
+
+function main( x, y, p )
+  return 0
+end
+
+function get_hsv(r,g,b)
+  local rp,gp,bp =  r/255, g/255, b/255
+  local brightest = math.max(math.max(rp,gp),bp)
+  local darkest = math.min(math.min(rp,gp),bp)
+  local delta = brightest - darkest
+
+  if delta == 0 then h = 0
+  elseif brightest == rp then
+    h = (60 * ((gp - bp) / delta) + 360) % 360
+  elseif brightest == gp then
+     h = (60 * ((bp - rp) / delta) + 120) % 360
+  elseif brightest == bp then
+     h = (60 * ((rp - gp) / delta) + 240) % 360
+   end
+
+   if brightest == 0 then s = 0
+   else s = (delta / brightest) end
+
+   local v = brightest
+
+  return h, s, v
+
+end
+
+function get_rgb(h,s,v)
+
+  local C = v * s
+  local X = C * (1 - math.abs( h / 60 %2  -1) )
+  local M = v - C
+
+  local R = 0
+  local G = 0
+  local B = 0
+
+  if h >= 0 and h < 60 then 
+    R = C
+   G = X
+  end
+  if h >= 60 and h < 120 then
+    R = X
+   G = C
+  end
+  if h >= 120 and h < 180 then
+    G = C
+    B = X
+  end
+  if h >= 180 and h < 240 then
+    G = X
+    B = C
+  end
+  if h >= 240 and h < 300 then
+    R = X
+    B = C
+  end
+  if h >= 300 and h < 360 then
+  R = C
+  B = X
+  end
+
+  R = (R+M)*255
+  G = (G+M)*255
+  B = (B+M)*255
+  return R,G,B
+
+end
+
+function hue_function(parameter)
+return math.pow(parameter,hue_rate)
+end
+
+function saturation_function(parameter)
+  if bs_param1() == 0 then 
+  return math.pow(parameter,sat_rate)
+  else
+  return math.pow(math.sin(math.pi * parameter),sat_rate)
+  end
+end
+
+
+function value_function(parameter)
+return math.pow(parameter,val_rate)
+end
+
+
+function interpolate(start, finish, param)
+return param*(finish-start) + start
+end
+
+function draw_slice(x, y, theta,inner_radius,radius,delta,r,g,b)
+  local half_delta = delta / 1.88
+  bs_polygon(x+inner_radius * math.cos(theta + half_delta), y+inner_radius * math.sin(theta + half_delta))
+  bs_polygon(x+inner_radius * math.cos(theta - half_delta), y+inner_radius * math.sin(theta - half_delta))
+  bs_polygon(x+radius * math.cos(theta - half_delta), y+radius * math.sin(theta - half_delta))
+  bs_polygon(x+radius * math.cos(theta + half_delta), y+radius * math.sin(theta + half_delta))
+  bs_fill(r,g,b,255)
+end
+
+function draw_tri(x,y,radius,r,g,b)
+
+  local del = 2 * math.pi / 3
+  local p2 = -math.pi / 2
+  bs_polygon(x + radius * math.cos(del+p2), y + radius * math.sin(del+p2))
+  bs_polygon(x + radius * math.cos(del*2+p2), y + radius * math.sin(del*2+p2))
+  bs_polygon(x + radius * math.cos(del*3+p2), y + radius * math.sin(del*3+p2))
+  bs_fill(r,g,b,255)
+end
+
+
+function last( x, y, p )
+  local w = bs_width_max()
+  local r0,g0,b0 =  bs_fore()
+  local rd, gd, bd, a = bs_pixel_get(x,y) -- Smart color interpolation
+  local h0,s0,v0 = get_hsv(r0,g0, b0)
+  local hd, sd, vd = get_hsv(rd,gd,bd)
+--bs_debug_log("hue now: " .. h0)
+--bs_debug_log("hue dest: " .. hd)
+  draw_tri(x,y,w,r0,g0,b0)
+
+  for i = 0.05, 1.05, 0.05 do
+    
+    local theta = i * 2 * math.pi
+    local delta = 0.05 * 2 * math.pi
+    local h = 0
+    local anti_hd = hd - 360
+    local shift_reverse = h0 - anti_hd  < 180
+    if shift_reverse then
+       h =interpolate(h0,anti_hd,hue_function(i))
+    else
+       h = interpolate(h0,hd, hue_function(i))
+    end
+     if h < 0 then h = 360 + h end
+    --bs_debug_log(h)
+    
+    local s = interpolate(s0,sd, saturation_function(i))
+    local v = interpolate(v0,vd, value_function(i))
+    local j,k,l = get_rgb(h,s,v)
+    draw_slice(x,y, theta, w, 2*w, delta,j,k,l)
+  end
+end
+
+
+hue_rate = math.pow(2, bs_param2() - 5)
+sat_rate = math.pow(2, bs_param3() - 5)
+val_rate = math.pow(2, bs_param4() - 5)
+bs_setmode(0)

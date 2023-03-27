@@ -1,0 +1,80 @@
+--CRESCENDO BRUSH!!!
+--PARAMETERS:::
+--STARTING SIZE
+--OPACIOUSNESS [Yesno]
+--GROWTH SPEED
+
+function param1()
+return "STARTING SIZE", 1, 50 , 26
+end
+
+function param2()
+return "GROWTH RATE", 1, 20, 5
+end
+
+function param3()
+return "OPACITY BY SIZE", 1, 0, 0
+end
+
+function param4()
+return " FLUX DEVIATION", 0,50,30
+end
+
+function changeSize(size)
+W = W + size
+if W >= 1 then
+ W = 1
+return true
+end
+if W <= 0 then W = 0 end
+return false
+end
+
+function main(x,y,p)
+
+
+local w = bs_width ()
+if w < 1   then w = 1 end
+
+--Increment the counter!!
+
+-- Reset the counter, update LastTime.
+--T is the difference between time
+--This code lowers the size
+-- This code increases the size.
+--Size cannot get any bigger than 100%
+normalSize =  bs_param2() / 2000
+
+if shrink then
+normalSize = -normalSize
+end
+
+maxsize = changeSize( normalSize)
+if maxsize then
+shrink = true
+deviation = 100 - bs_param4() * 2
+shrinkTo = math.random(deviation,100) / 100
+return 0
+end
+
+if W <= shrinkTo then
+shrink = false
+end
+
+
+local opak = bs_opaque()
+if bs_param3() == 1 then opak = opak * W
+end
+--Don't Edit!
+local r, g, b = bs_fore ()
+bs_fill (r , g, b , opak * 255 )
+bs_ellipse( x, y,  W * w , W * w, 0,r,g, b , opak * 255)
+return 1
+--Don't Edit!!!
+end
+bs_setmode(1)
+W = bs_param1() / 50
+shrinkTo = 0.5
+shrink = false
+maxsize = false
+lastTime = bs_ms()
